@@ -120,7 +120,9 @@ module Chukan
 		def initialize(*cmdline)
 			@cmdline = cmdline.map {|x| x.to_s }
 			@status = nil
-			@shortname = File.basename(cmdline.first.split(/\s/,2).first)[0, 12]
+			@shortname = cmdline.join(' ').split(/\s/)
+			@shortname[0] = File.basename(@shortname[0])
+			@shortname = @shortname.join(' ')[0, 12]
 			start
 		end
 
@@ -128,7 +130,6 @@ module Chukan
 		attr_reader :stdin, :stdout, :stderr
 		attr_reader :pid
 		attr_reader :status
-		attr_reader :msg_prefix
 
 		def join
 			@status = Process.waitpid2(@pid)[1]
@@ -166,6 +167,17 @@ module Chukan
 
 		def hup
 			signal(:SIGHUP)
+		end
+
+		def set_display(shortname)
+			if shortname.length <= 12
+				@msg_prefix[0..-1] = "[%-12s %6d] " % [shortname, @pid]
+			elsif shortname.length < 19
+				@msg_prefix[0..-1] = "[%-19s] " % [shortname]
+			else
+				@msg_prefix[0..-1] = "[#{shortname}] "
+			end
+			self
 		end
 
 		private
